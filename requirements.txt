@@ -1,0 +1,7 @@
+langchain
+langchain-openai
+supabase
+psycopg2-binary
+pgvector
+ragas
+python-dotenv
