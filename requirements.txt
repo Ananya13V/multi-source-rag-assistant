@@ -1,8 +1,17 @@
 langchain
 langchain-openai
 langchain-community
+langchain-text-splitters
 supabase
 psycopg2-binary
 pgvector
 ragas
 python-dotenv
+pydantic-settings
+fastapi
+uvicorn[standard]
+pypdf
+reportlab
+tenacity
+pytest
+httpx
