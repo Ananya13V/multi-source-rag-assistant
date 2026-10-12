@@ -101,3 +101,31 @@ count is offline, dependency-free, and good enough for that purpose.
 **Alternatives considered:** `tiktoken` (token-exact, matches what the 
 embedding/chat model actually sees, but adds a network dependency and a 
 vocab-file cache for marginal accuracy gain at this scope).
+
+## Decision: Ollama (local inference) over Azure OpenAI for chat + embeddings
+**Date:** 2026-10-12
+**Context:** Running this as a personal/portfolio project; Azure OpenAI 
+requires an approved, billed subscription (its free trial credit would 
+cover this project's light usage, but needs a card on file and isn't 
+available in every account/region). Wanted the whole stack runnable at 
+zero cost with no API key at all.
+**Decision:** Swap Azure OpenAI for Ollama, running `llama3.2` for 
+chat/generation and `nomic-embed-text` for embeddings, both served locally 
+via `ollama serve`.
+**Rationale:** Genuinely free forever (no trial credit to run out, no card 
+on file), works fully offline, and needs no account signup — only an 
+install. The embeddings dimension changed from 1536 (OpenAI's 
+`text-embedding-3-small`) to 768 (`nomic-embed-text`'s output size), which 
+is reflected in `sql/schema.sql`'s `vector(768)` column and 
+`embedding_dim` in `app/config.py` - **existing Supabase tables created 
+against the old schema need to be dropped and recreated**, since pgvector 
+columns are fixed-dimension and can't be resized in place.
+**Alternatives considered:** Azure OpenAI's free trial credit (no code 
+changes needed, better model quality, but one-time/region-gated and not 
+truly free past 30 days); Google Gemini's free API tier (also genuinely 
+free, but still a cloud dependency and API key, and rate-limited); 
+self-hosting a model on a GPU box (defeats the "free" goal). Local Ollama 
+models (3B-8B class) also answer with noticeably lower quality than 
+GPT-4o-class models - this is a real accuracy/cost tradeoff, not a free 
+upgrade; RAGAS numbers from `eval/run_ragas.py` should be read with that 
+in mind rather than compared directly to a cloud-model run.

@@ -1,19 +1,19 @@
-"""Azure OpenAI embeddings client, shared by ingestion and query rewriting."""
+"""Ollama embeddings client (local inference, zero cost), shared by ingestion
+and query rewriting. Requires `ollama pull nomic-embed-text` and `ollama serve`.
+"""
 from functools import lru_cache
 
-from langchain_openai import AzureOpenAIEmbeddings
+from langchain_ollama import OllamaEmbeddings
 
 from app.config import get_settings
 
 
 @lru_cache
-def get_embeddings_client() -> AzureOpenAIEmbeddings:
+def get_embeddings_client() -> OllamaEmbeddings:
     settings = get_settings()
-    return AzureOpenAIEmbeddings(
-        azure_endpoint=settings.azure_openai_endpoint,
-        api_key=settings.azure_openai_api_key,
-        api_version=settings.azure_openai_api_version,
-        azure_deployment=settings.azure_openai_embedding_deployment,
+    return OllamaEmbeddings(
+        base_url=settings.ollama_base_url,
+        model=settings.ollama_embedding_model,
     )
 
 

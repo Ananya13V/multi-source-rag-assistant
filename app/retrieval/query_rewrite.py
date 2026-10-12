@@ -6,7 +6,7 @@ queries never pay for the extra LLM round-trip.
 from functools import lru_cache
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_openai import AzureChatOpenAI
+from langchain_ollama import ChatOllama
 
 from app.config import get_settings
 
@@ -19,13 +19,11 @@ _SYSTEM_PROMPT = (
 
 
 @lru_cache
-def _get_llm() -> AzureChatOpenAI:
+def _get_llm() -> ChatOllama:
     settings = get_settings()
-    return AzureChatOpenAI(
-        azure_endpoint=settings.azure_openai_endpoint,
-        api_key=settings.azure_openai_api_key,
-        api_version=settings.azure_openai_api_version,
-        azure_deployment=settings.azure_openai_deployment_name,
+    return ChatOllama(
+        base_url=settings.ollama_base_url,
+        model=settings.ollama_chat_model,
         temperature=0,
     )
 

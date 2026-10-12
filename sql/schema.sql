@@ -25,7 +25,7 @@ create table if not exists documents (
     code_start_line    integer,
     code_end_line      integer,
 
-    embedding        vector(1536) not null,
+    embedding        vector(768) not null,
     content_tsv      tsvector generated always as (to_tsvector('english', content)) stored,
 
     created_at       timestamptz not null default now(),
@@ -64,7 +64,7 @@ create trigger documents_set_updated_at
 -- ---------------------------------------------------------------------
 
 create or replace function match_documents_vector(
-    query_embedding vector(1536),
+    query_embedding vector(768),
     match_count integer default 20
 )
 returns table (

@@ -7,12 +7,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    # Azure OpenAI (generation + embeddings)
-    azure_openai_api_key: str = ""
-    azure_openai_endpoint: str = ""
-    azure_openai_deployment_name: str = ""
-    azure_openai_embedding_deployment: str = "text-embedding-3-small"
-    azure_openai_api_version: str = "2024-08-01-preview"
+    # Ollama (local inference, generation + embeddings) - zero-cost, no API key
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_chat_model: str = "llama3.2"
+    ollama_embedding_model: str = "nomic-embed-text"
 
     # Supabase (Postgres + pgvector)
     supabase_url: str = ""
@@ -20,7 +18,7 @@ class Settings(BaseSettings):
     supabase_db_url: str = ""  # direct Postgres connection string, used by psycopg2
 
     # Retrieval / ingestion tuning
-    embedding_dim: int = 1536
+    embedding_dim: int = 768  # nomic-embed-text's output dimension; must match sql/schema.sql's vector() column
     chunk_size_words: int = 400
     chunk_overlap_words: int = 60
     retrieval_top_k: int = 20

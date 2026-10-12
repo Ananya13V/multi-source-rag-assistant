@@ -1,9 +1,11 @@
 """RAGAS evaluation over eval/testset.jsonl, run against the live pipeline.
 
-Requires a populated Supabase table (run scripts/ingest_cli.py first) and a
-working .env (Azure OpenAI + Supabase). Not runnable offline: RAGAS's
-faithfulness/context-precision/context-recall/answer-relevancy metrics are
-themselves LLM judgments, so this call incurs real Azure OpenAI usage.
+Requires a populated Supabase table (run scripts/ingest_cli.py first), a
+working .env (Supabase credentials), and Ollama running locally with the
+configured chat + embedding models pulled (`ollama pull llama3.2`,
+`ollama pull nomic-embed-text`). Not runnable without Ollama serving:
+RAGAS's faithfulness/context-precision/context-recall/answer-relevancy
+metrics are themselves LLM judgments, so this call needs a working local model.
 
     python scripts/ingest_cli.py data/sample_docs
     python eval/run_ragas.py
@@ -32,7 +34,7 @@ from ragas.metrics import (  # noqa: E402
     faithfulness,
 )
 
-from langchain_openai import AzureChatOpenAI  # noqa: E402
+from langchain_ollama import ChatOllama  # noqa: E402
 
 from app.config import get_settings  # noqa: E402
 from app.embeddings import get_embeddings_client  # noqa: E402
@@ -84,11 +86,9 @@ def main() -> None:
 
     settings = get_settings()
     judge_llm = LangchainLLMWrapper(
-        AzureChatOpenAI(
-            azure_endpoint=settings.azure_openai_endpoint,
-            api_key=settings.azure_openai_api_key,
-            api_version=settings.azure_openai_api_version,
-            azure_deployment=settings.azure_openai_deployment_name,
+        ChatOllama(
+            base_url=settings.ollama_base_url,
+            model=settings.ollama_chat_model,
             temperature=0,
         )
     )

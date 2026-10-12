@@ -1,8 +1,10 @@
 # Multi-Source Technical Docs RAG Assistant
 
 A retrieval-augmented generation assistant over heterogeneous technical
-documentation - PDFs and source code - built with LangChain, Azure OpenAI,
-and Supabase/pgvector, served via FastAPI and evaluated with RAGAS.
+documentation - PDFs and source code - built with LangChain, Ollama (local
+inference), and Supabase/pgvector, served via FastAPI and evaluated with
+RAGAS. Runs at zero cost: Ollama needs no API key or billing account, and
+Supabase's free tier covers this project's scale.
 
 Ask it a question and it answers **only** from what's actually indexed,
 with every claim tagged back to the source chunk that supports it
@@ -50,14 +52,32 @@ Design rationale for each of these choices lives in `DECISIONS.md`.
 
 ## Setup
 
-```bash
-pip install -r requirements.txt
-cp .env.example .env   # fill in Azure OpenAI + Supabase credentials
-```
+1. **Install [Ollama](https://ollama.com)** and pull the two local models this
+   project uses:
 
-Then, in the Supabase SQL editor (or via `psql "$SUPABASE_DB_URL"`), run
-`sql/schema.sql` once to create the `documents` table, its indexes, and the
-two retrieval RPCs.
+   ```bash
+   ollama pull llama3.2          # chat / generation / query rewriting
+   ollama pull nomic-embed-text  # embeddings (768-dim)
+   ollama serve                  # leave running in the background
+   ```
+
+2. **Create a free [Supabase](https://supabase.com) project** (the free tier
+   covers this project's scale - see `DECISIONS.md`). From Project Settings,
+   grab the URL and the `service_role` key (ingestion needs write access).
+   In the Supabase SQL editor (or via `psql "$SUPABASE_DB_URL"`), run
+   `sql/schema.sql` once to create the `documents` table, its indexes, and
+   the two retrieval RPCs.
+
+3. **Install Python dependencies and configure:**
+
+   ```bash
+   pip install -r requirements.txt
+   cp .env.example .env   # fill in your Supabase credentials
+   ```
+
+   No Ollama env vars are needed unless you're running it somewhere other
+   than `localhost:11434` or want a different model than the defaults in
+   `app/config.py`.
 
 ## Running it
 
@@ -104,15 +124,19 @@ python eval/run_ragas.py
 ```
 
 This computes RAGAS faithfulness / answer relevancy / context precision /
-context recall (each itself an LLM judgment, so it costs real Azure OpenAI
-calls), plus our own average citation-hallucination-rate and latency, and
-writes `eval/results.json`.
+context recall (each itself an LLM judgment - here, judged by the same
+local `llama3.2` model), plus our own average citation-hallucination-rate
+and latency, and writes `eval/results.json`.
 
 **Note:** this repo ships the pipeline and the eval harness, but not
-pre-computed numbers - those depend on your own Azure OpenAI deployment and
-model choice. Run `eval/run_ragas.py` against your own setup and use the
-`results.json` it produces for any metrics you want to put on a resume or
-report.
+pre-computed numbers - those depend on your hardware and model choice. Run
+`eval/run_ragas.py` against your own setup and use the `results.json` it
+produces for any metrics you want to put on a resume or report. Also worth
+knowing: small local models (3B-8B class, like `llama3.2`) answer with
+noticeably lower quality than GPT-4o-class cloud models, and using the same
+local model as both the answerer and the RAGAS judge is weaker than an
+independent judge - read any numbers from this setup as a demonstration of
+the pipeline's mechanics, not as a benchmark against cloud-model RAG systems.
 
 ## Testing
 
@@ -121,10 +145,10 @@ pytest
 ```
 
 The test suite (chunk-id determinism, source-aware chunking, RRF fusion
-math, citation validation) runs offline - no Supabase or Azure OpenAI
-credentials required.
+math, citation validation) runs offline - no Supabase or Ollama instance
+required.
 
 ## Tech stack
 
-LangChain · Azure OpenAI (chat + embeddings) · Supabase (Postgres + pgvector)
-· FastAPI · RAGAS · pypdf
+LangChain · Ollama (local inference, chat + embeddings) · Supabase
+(Postgres + pgvector) · FastAPI · RAGAS · pypdf
